@@ -6,9 +6,13 @@ spring:
     # driver-class-name: org.h2.Driver 官方的demo使用的是h2数据库，这里使用mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 数据库地址
-    url: jdbc:mysql://localhost:3306
+    url: jdbc:mysql://localhost:3306/hcj
     username: root
     password: 12345678
 server:
   # 端口号
   port: 8080
+mybatis-plus:
+  # 解决mybatis-plus默认将驼峰转换为下划线
+  configuration:
+    map-underscore-to-camel-case: false
