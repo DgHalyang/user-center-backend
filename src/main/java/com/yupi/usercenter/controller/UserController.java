@@ -12,6 +12,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yupi.usercenter.constant.UserConstant.ADMIN_ROLE;
 import static com.yupi.usercenter.constant.UserConstant.USER_LOGIN_STATE;
@@ -65,7 +66,8 @@ public class UserController {
         if (StringUtils.isNotBlank(userName)) {
             queryWrapper.like("username",userName);
         }
-        return userService.list(queryWrapper);
+        List<User> userList = userService.list(queryWrapper);
+        return userList.stream().map(userService::getSafetyUser).collect(Collectors.toList());
     }
 
     @PostMapping("/delete")
