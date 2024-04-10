@@ -36,10 +36,11 @@ public class UserController {
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        if (StringUtils.isAnyBlank(userAccount,userPassword,checkPassword)) {
+        String planetCode = userRegisterRequest.getPlanetCode();
+        if (StringUtils.isAnyBlank(userAccount,userPassword,checkPassword,planetCode)) {
             return null;
         }
-        return userService.userRegister(userAccount, userPassword, checkPassword);
+        return userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
     }
 
     @PostMapping("/login")
@@ -54,6 +55,15 @@ public class UserController {
             return null;
         }
         return userService.userLogin(userAccount, userPassword, request);
+    }
+
+    @PostMapping("/logout")
+    // @RequestBody 不加上->Springmvc 框架不知知道怎么把前端传来的json参数去合适的对象做一个关联
+    public Integer userLogout(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return userService.userLogout(request);
     }
 
     @GetMapping("/current")
