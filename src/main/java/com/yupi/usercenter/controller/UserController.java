@@ -1,6 +1,10 @@
 package com.yupi.usercenter.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yupi.usercenter.common.BaseResponse;
+import com.yupi.usercenter.common.ErrorCode;
+import com.yupi.usercenter.common.ResultUtil;
+import com.yupi.usercenter.exception.BusinessException;
 import com.yupi.usercenter.model.domain.User;
 import com.yupi.usercenter.model.domain.request.UserLoginRequest;
 import com.yupi.usercenter.model.domain.request.UserRegisterRequest;
@@ -29,80 +33,88 @@ public class UserController {
 
     @PostMapping("/register")
     // @RequestBody 不加上->Springmvc 框架不知知道怎么把前端传来的json参数去合适的对象做一个关联
-    public Long userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
-            return null;
+//            return ResultUtil.error(ErrorCode.PARAMS_ERROR);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
         String planetCode = userRegisterRequest.getPlanetCode();
         if (StringUtils.isAnyBlank(userAccount,userPassword,checkPassword,planetCode)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
+        long result = userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
+        return ResultUtil.success(result);
     }
 
     @PostMapping("/login")
     // @RequestBody 不加上->Springmvc 框架不知知道怎么把前端传来的json参数去合适的对象做一个关联
-    public User userRegister(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
+    public BaseResponse<User> userRegister(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         if (userLoginRequest == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         String userAccount = userLoginRequest.getUserAccount();
         String userPassword = userLoginRequest.getUserPassword();
         if (StringUtils.isAnyBlank(userAccount,userPassword)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return userService.userLogin(userAccount, userPassword, request);
+        User user = userService.userLogin(userAccount, userPassword, request);
+        return ResultUtil.success(user);
     }
 
     @PostMapping("/logout")
     // @RequestBody 不加上->Springmvc 框架不知知道怎么把前端传来的json参数去合适的对象做一个关联
-    public Integer userLogout(HttpServletRequest request) {
+    public BaseResponse<Integer> userLogout(HttpServletRequest request) {
         if (request == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return userService.userLogout(request);
+        int result = userService.userLogout(request);
+        return ResultUtil.success(result);
     }
 
     @GetMapping("/current")
-    public User getCurrentUser(HttpServletRequest request) {
+    public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null) {
-            return null;
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         long userId = currentUser.getId();
         // todo 校验用户是否合法
         User user = userService.getById(userId);
-        return userService.getSafetyUser(user);
+        User safetyUser = userService.getSafetyUser(user);
+        return ResultUtil.success(safetyUser);
     }
 
     @GetMapping("/search")
-    public List<User> searchUsers(String userName, HttpServletRequest request) {
+    public BaseResponse<List<User>> searchUsers(String userName, HttpServletRequest request) {
         // 仅管理员可查询
         if (!isAdmin(request)) {
-            return new ArrayList<>();
+//            return new ArrayList<>();
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         if (StringUtils.isNotBlank(userName)) {
             queryWrapper.like("username",userName);
         }
         List<User> userList = userService.list(queryWrapper);
-        return userList.stream().map(userService::getSafetyUser).collect(Collectors.toList());
+        List<User> list = userList.stream().map(userService::getSafetyUser).collect(Collectors.toList());
+        return ResultUtil.success(list);
     }
 
     @PostMapping("/delete")
-    public Boolean deleteUser(@RequestBody long id, HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteUser(@RequestBody long id, HttpServletRequest request) {
         // 仅管理员可查询
         if (!isAdmin(request)) {
-            return false;
+            throw new BusinessException(ErrorCode.NO_AUTH);
         }
         if (id <= 0) {
-            return false;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return userService.removeById(id);
+        boolean result = userService.removeById(id);
+        return ResultUtil.success(result);
     }
 
     private boolean isAdmin(HttpServletRequest request) {
